@@ -15,54 +15,47 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
-export default function NewCallPage() {
+export default function JoinCallPage() {
   const router = useRouter();
-  const [receiverId, setReceiverId] = useState("");
+  const [channelName, setChannelName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleStartCall = async (e: React.FormEvent) => {
+  const handleJoinCall = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!receiverId.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid receiver ID",
-        variant: "destructive",
-      });
+    if (!channelName.trim()) {
+      toast.error("Channel name is required");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/call/initiate", {
+      const response = await fetch("/api/call/join", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ receiverId }),
+        body: JSON.stringify({ channelName }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to initiate call");
+        throw new Error(data.message || "Failed to join call");
       }
 
       // Navigate to the call room with the channel info
       router.push(
-        `/call/room?channel=${data.channelName}&token=${data.token}&role=host`
+        `/call/room?channel=${channelName}&token=${data.token}&role=audience`
       );
     } catch (error) {
-      console.error("Error starting call:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to start call",
-        variant: "destructive",
-      });
+      console.error("Error joining call:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to join call"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -72,21 +65,21 @@ export default function NewCallPage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Start a New Call</CardTitle>
+          <CardTitle>Join a Call</CardTitle>
           <CardDescription>
-            Enter the ID of the user you want to call
+            Enter the channel name to join an existing call
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleStartCall}>
+        <form onSubmit={handleJoinCall}>
           <CardContent>
             <div className="grid w-full items-center gap-4">
               <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="receiverId">Receiver ID</Label>
+                <Label htmlFor="channelName">Channel Name</Label>
                 <Input
-                  id="receiverId"
-                  placeholder="Enter receiver ID"
-                  value={receiverId}
-                  onChange={(e) => setReceiverId(e.target.value)}
+                  id="channelName"
+                  placeholder="Enter channel name"
+                  value={channelName}
+                  onChange={(e) => setChannelName(e.target.value)}
                   required
                 />
               </div>
@@ -97,7 +90,7 @@ export default function NewCallPage() {
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Starting Call..." : "Start Call"}
+              {isLoading ? "Joining..." : "Join Call"}
             </Button>
           </CardFooter>
         </form>
